@@ -8,59 +8,60 @@ UDP_PORT = 50000
 
 TURN_LIGHT_OFF = "\x21\x00\x55" #this turns all lights off
 TURN_LIGHT_ON = "\x22\x00\x55"
+BRIGHT_UP = "\x23\x00\x55"
+BRIGHT_DOWN = "\x24\x00\x55"
 MODE_DOWN = "\x28\x00\x55"
 MODE_UP = "\x27\x00\x55"
 GREEN = "\x20\x70\x55"
 RED = "\x20\xB0\x55"
 
+def send(sock, msg, sleep=0.5):
+	sock.sendto(msg, (UDP_IP, UDP_PORT))
+	time.sleep(sleep)
+
 def demo(sock):
 	# Green Light
-	sock.sendto(GREEN, (UDP_IP, UDP_PORT))
+	success_mode(sock)
 	time.sleep(5)
 
 	# Play sound
-	pygame.init()
-	sound = pygame.mixer.Sound('sound.wav')
-	sound.set_volume(1.0)
-	sound.play()
-	time.sleep(2)
-	# Switch to 'Mode' mode - should be set to flashing red manually first
-	sock.sendto(MODE_DOWN, (UDP_IP, UDP_PORT))
-	time.sleep(5)
-
-	# Stop sound
-	sound.stop()
+	fail_mode(sock, 5)
 
 	# Switch back to Green
-	sock.sendto(GREEN, (UDP_IP, UDP_PORT))
-	time.sleep(0.3)
+	success_mode(sock)
 
 def success_mode(sock):
-	sock.sendto(GREEN, (UDP_IP, UDP_PORT))
+	send(sock, GREEN)
+	for i in range(9):
+		send(sock, BRIGHT_DOWN)
 
-def fail_mode(sock):
+def fail_mode(sock, sleep=0):
 	# Play sound
 	pygame.init()
 	sound = pygame.mixer.Sound('sound.wav')
 	sound.set_volume(1.0)
 	sound.play()
 	time.sleep(2)
-	sock.sendto(GREEN, (UDP_IP, UDP_PORT))
-	time.sleep(0.05)
+	send(sock, GREEN)
 	# Switch to 'Mode' mode - should be set to flashing red manually first
-	sock.sendto(MODE_DOWN, (UDP_IP, UDP_PORT))
-	time.sleep(sound.get_length())
+	send(sock, MODE_DOWN)
+	for i in range(9):
+		send(sock, BRIGHT_UP)
+	if (sleep > 0):
+		time.sleep(sleep)
+		sound.stop()
+	else:
+		time.sleep(sound.get_length())
+		sound.stop()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.sendto(TURN_LIGHT_ON, (UDP_IP, UDP_PORT))
-time.sleep(0.1)
+send(sock, TURN_LIGHT_ON)
 
 arg_len = len(sys.argv)
 if (arg_len == 1):
 	demo(sock)
 elif (arg_len == 2):
 	success = sys.argv[1]
-	print "arg", sys.argv[1]
 	if (success == "1"):
 		success_mode(sock)
 	elif (success == "0"):
