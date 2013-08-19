@@ -107,6 +107,7 @@ def parse_arguments():
 		if opt in ("-h", "--help"):
 			print_help(0)
 		elif opt in ("-q", "--quiet"):
+			global QUIET
 			QUIET = True
 		elif opt in ("-s", "--server"):
 			if not set_mode("SERVER"):
@@ -121,6 +122,7 @@ def parse_arguments():
 			global LOG_LEVEL
 			LOG_LEVEL = numeric_level
 		elif opt in ("--console-logging"):
+			global CONSOLE_LOGGING
 			CONSOLE_LOGGING = True
 	set_mode("DIRECT")
 	return args
@@ -150,6 +152,8 @@ if MODE == "SERVER":
 
 	listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	listen_sock.bind((LISTEN_UDP_IP, LISTEN_UDP_PORT))
+
+	logger.info("Listening on port %d" % LISTEN_UDP_PORT)
 
 	while True:
 		data, addr = listen_sock.recvfrom(1024) # buffer size is 1024 bytes
