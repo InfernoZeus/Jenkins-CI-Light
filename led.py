@@ -14,16 +14,20 @@ SEND_UDP_PORT = 50000
 LISTEN_UDP_IP = "0.0.0.0"
 LISTEN_UDP_PORT = 50000
 
-TURN_LIGHT_OFF = "\x21\x00\x55" #this turns all lights off
-TURN_LIGHT_ON = "\x22\x00\x55"
-BRIGHT_UP = "\x23\x00\x55"
-BRIGHT_DOWN = "\x24\x00\x55"
-SPEED_UP = "\x25\x00\x55"
-SPEED_DOWN = "\x26\x00\x55"
-MODE_UP = "\x27\x00\x55"
-MODE_DOWN = "\x28\x00\x55"
-GREEN = "\x20\x70\x55"
-RED = "\x20\xB0\x55"
+COMMANDS = {
+'TURN_LIGHT_OFF' : "\x21\x00\x55",
+'TURN_LIGHT_ON' : "\x22\x00\x55",
+'BRIGHT_UP' : "\x23\x00\x55",
+'BRIGHT_DOWN' : "\x24\x00\x55",
+'SPEED_UP' : "\x25\x00\x55",
+'SPEED_DOWN' : "\x26\x00\x55",
+'MODE_UP' : "\x27\x00\x55",
+'MODE_DOWN' : "\x28\x00\x55",
+'GREEN' : "\x20\x70\x55",
+'RED' : "\x20\xB0\x55"
+}
+
+COMMAND_LOOKUP = dict((v,k) for k,v in COMMANDS.iteritems())
 
 QUIET = False
 MODE = ""
@@ -34,6 +38,7 @@ LOG_FORMAT = "%(asctime)s | %(levelname)7s | %(message)s"
 CONSOLE_LOGGING = False
 
 def send(sock, msg, sleep=0.3):
+	logger.debug("Sent %s to LED" % COMMAND_LOOKUP[msg])
 	sock.sendto(msg, (SEND_UDP_IP, SEND_UDP_PORT))
 	time.sleep(sleep)
 
@@ -49,9 +54,9 @@ def demo(sock):
 	success_mode(sock)
 
 def success_mode(sock):
-	send(sock, GREEN)
+	send(sock, COMMANDS['GREEN'])
 	for i in range(9):
-		send(sock, BRIGHT_DOWN, 0.1)
+		send(sock, COMMANDS['BRIGHT_DOWN'], 0.1)
 
 def fail_mode(sock, sleep=0):
 	# Play sound
@@ -61,11 +66,11 @@ def fail_mode(sock, sleep=0):
 		sound.set_volume(1.0)
 		sound.play()
 		time.sleep(2)
-	send(sock, GREEN)
+	send(sock, COMMANDS['GREEN'])
 	# Switch to 'Mode' mode - should be set to flashing red manually first
-	send(sock, MODE_DOWN)
+	send(sock, COMMANDS['MODE_DOWN'])
 	for i in range(9):
-		send(sock, BRIGHT_UP, 0.05)
+		send(sock, COMMANDS['BRIGHT_UP'], 0.05)
 	if (sleep > 0):
 		time.sleep(sleep)
 		if not QUIET:
@@ -146,7 +151,7 @@ if (MODE == "SERVER" and CONSOLE_LOGGING) or (MODE != "SERVER"):
 logger.debug("Set Log Level to " + logging.getLevelName(LOG_LEVEL))
 
 send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-send(send_sock, TURN_LIGHT_ON)
+send(send_sock, COMMANDS['TURN_LIGHT_ON'])
 
 if MODE == "SERVER":
 
