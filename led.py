@@ -30,6 +30,8 @@ MODE = ""
 
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s | %(levelname)7s | %(message)s"
+# Only used in Server mode
+CONSOLE_LOGGING = False
 
 def send(sock, msg, sleep=0.3):
 	sock.sendto(msg, (SEND_UDP_IP, SEND_UDP_PORT))
@@ -83,7 +85,7 @@ def call_corresponding_mode(sock, status):
 
 def print_help(exit_code, exit=True):
 	print 'usage: led.py [-q] [--log=LEVEL] status'
-	print '       led.py [-q] [--log=LEVEL] --server'
+	print '       led.py [-q] [--log=LEVEL] [--console-logging] --server'
 	print '       led.py [-q] [--log=LEVEL] --demo'
 	if exit:
 		sys.exit(exit_code)
@@ -98,7 +100,7 @@ def set_mode(new_mode):
 
 def parse_arguments():
 	try:
-		opts, args = getopt.getopt(sys.argv[1:],"qsdh",["quiet","server", "demo", "help", "log="])
+		opts, args = getopt.getopt(sys.argv[1:],"qsdh",["quiet","server", "demo", "help", "log=", "console-logging"])
 	except getopt.GetoptError:
 		print_help(2)
 	for opt, arg in opts:
@@ -118,6 +120,8 @@ def parse_arguments():
 			    raise ValueError('Invalid log level: %s' % arg)
 			global LOG_LEVEL
 			LOG_LEVEL = numeric_level
+		elif opt in ("--console-logging"):
+			CONSOLE_LOGGING = True
 	set_mode("DIRECT")
 	return args
 
@@ -126,13 +130,16 @@ args = parse_arguments()
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-fh = logging.FileHandler('led.log')
-ch = logging.StreamHandler()
 formatter = logging.Formatter(LOG_FORMAT)
+
+fh = logging.FileHandler('led.log')
 fh.setFormatter(formatter)
-ch.setFormatter(formatter)
 logger.addHandler(fh)
-logger.addHandler(ch)
+
+if (MODE == "SERVER" and CONSOLE_LOGGING) or (MODE != "SERVER"):
+	ch = logging.StreamHandler()
+	ch.setFormatter(formatter)
+	logger.addHandler(ch)
 
 logger.debug("Set Log Level to " + logging.getLevelName(LOG_LEVEL))
 
