@@ -7,6 +7,7 @@ import sys
 import json
 import getopt
 import logging
+import threading
 
 SEND_UDP_IP = "192.168.1.15" #this is the IP of the wifi bridge
 SEND_UDP_PORT = 50000
@@ -31,6 +32,7 @@ COMMAND_LOOKUP = dict((v,k) for k,v in COMMANDS.iteritems())
 
 QUIET = False
 MODE = ""
+STOP_THREAD = None
 
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s | %(levelname)7s | %(message)s"
@@ -48,7 +50,8 @@ def demo(sock):
 	time.sleep(5)
 
 	# Show fail mode
-	fail_mode(sock, 10)
+	thread = fail_mode_thread(sock, 10)
+	thread.start()
 
 	# Switch back to Green
 	success_mode(sock)
@@ -58,33 +61,55 @@ def success_mode(sock):
 	for i in range(9):
 		send(sock, COMMANDS['BRIGHT_DOWN'], 0.1)
 
-def fail_mode(sock, sleep=0):
-	# Play sound
-	if not QUIET:
-		pygame.init()
-		sound = pygame.mixer.Sound('sound.wav')
-		sound.set_volume(1.0)
-		sound.play()
-		time.sleep(2)
-	send(sock, COMMANDS['GREEN'])
-	# Switch to 'Mode' mode - should be set to flashing red manually first
-	send(sock, COMMANDS['MODE_DOWN'])
-	for i in range(9):
-		send(sock, COMMANDS['BRIGHT_UP'], 0.05)
-	if (sleep > 0):
-		time.sleep(sleep)
+class fail_mode_thread (threading.Thread):
+	def __init__(self, sock, sleep=0):
+		threading.Thread.__init__(self)
+		self.sock = sock
+		self.sleep = sleep
+		self._stop = threading.Event()
+
+	def stop(self):
+		self._stop.set()
+
+	def stopped(self):
+		return self._stop.isSet()
+
+	def run(self):
+		# Play sound
 		if not QUIET:
-			sound.stop()
-	else:
+			pygame.init()
+			self.sound = pygame.mixer.Sound('sound.wav')
+			self.sound.set_volume(1.0)
+			self.sound.play()
+			time.sleep(2)
+		send(self.sock, COMMANDS['GREEN'])
+		# Switch to 'Mode' mode - should be set to flashing red manually first
+		send(self.sock, COMMANDS['MODE_DOWN'])
+		for i in range(9):
+			send(self.sock, COMMANDS['BRIGHT_UP'], 0.05)
+		if (self.sleep == 0 and not QUIET):
+			self.sleep = self.sound.get_length()
+		while (self.sleep > 0):
+			if (self.stopped()):
+				break
+			time.sleep(1)
+			self.sleep -= 1
 		if not QUIET:
-			time.sleep(sound.get_length())
-			sound.stop()
+			self.sound.stop()
+			pygame.quit()
+		logger.debug("Exiting fail_mode_thread")
+
 
 def call_corresponding_mode(sock, status):
+	global STOP_THREAD
+	if (STOP_THREAD != None):
+		STOP_THREAD.stop()
+		STOP_THREAD.join()
 	if (status == "1" or status == "SUCCESS"):
 		success_mode(sock)
 	elif (status == "0" or status == "FAILURE"):
-		fail_mode(sock)
+		STOP_THREAD = fail_mode_thread(sock)
+		STOP_THREAD.start()
 	else:
 		print "Status should either be 1/0 or SUCCESS/FAILURE"
 
