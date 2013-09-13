@@ -80,7 +80,8 @@ class fail_mode_thread (threading.Thread):
 		# Play sound
 		if not QUIET:
 			pygame.init()
-			self.sound = pygame.mixer.Sound('sound.wav')
+			sound_path = os.path.join(os.path.dirname(__file__), 'sound.wav')
+			self.sound = pygame.mixer.Sound(sound_path)
 			self.sound.set_volume(1.0)
 			self.sound.play()
 			time.sleep(2)
@@ -167,7 +168,8 @@ logger.setLevel(LOG_LEVEL)
 formatter = logging.Formatter(LOG_FORMAT)
 
 if (MODE == "SERVER"):
-	fh = logging.FileHandler('/usr/local/var/jenkins-ci-light/server.log')
+	log_path = os.path.join(os.path.dirname(__file__), 'jenkins-ci-light.log')
+	fh = logging.FileHandler(log_path)
 	fh.setFormatter(formatter)
 	logger.addHandler(fh)
 
