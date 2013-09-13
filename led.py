@@ -41,6 +41,8 @@ LOG_FORMAT = "%(asctime)s | %(levelname)7s | %(message)s"
 # Only used in Server mode
 CONSOLE_LOGGING = False
 
+FAILING_JOBS = set()
+
 def send(sock, msg, sleep=0.3):
 	logger.debug("Sent %s to LED" % COMMAND_LOOKUP[msg])
 	sock.sendto(msg, (SEND_UDP_IP, SEND_UDP_PORT))
@@ -103,11 +105,26 @@ class fail_mode_thread (threading.Thread):
 		logger.debug("Exiting fail_mode_thread")
 
 
-def call_corresponding_mode(sock, status):
-	global STOP_THREAD
+def call_corresponding_mode(sock, status, job=None):
+	global STOP_THREAD, FAILING_JOBS
 	if (STOP_THREAD != None):
 		STOP_THREAD.stop()
 		STOP_THREAD.join()
+	if (job != None):
+		if (status == "FAILURE" or status == "0"):
+			if (job != "Test Build Failure"):
+				FAILING_JOBS.add(job)
+		else:
+			FAILING_JOBS.discard(job)
+		if not FAILING_JOBS:
+			status = "SUCCESS"
+		else:
+			status_string = "Jobs "
+			for job in FAILING_JOBS:
+				status_string += "\"" + job +"\" "
+			status_string += "still failing."
+			logger.debug(status_string)
+			status = "FAILURE"
 	if (status == "1" or status == "SUCCESS"):
 		success_mode(sock)
 	elif (status == "0" or status == "FAILURE"):
@@ -214,9 +231,10 @@ if MODE == "SERVER":
 			info = json.loads(data)
 			build_info = info['build']
 			if build_info['phase'] == "FINISHED":
+				job = info['name']
 				status = build_info['status']
-				logger.info("Build finished with status %s", status)
-				call_corresponding_mode(send_sock, status)
+				logger.info("Build %s finished with status %s", job, status)
+				call_corresponding_mode(send_sock, status, job)
 		except ValueError as e:
 			logger.warning(e)
 			if LOG_LEVEL > logging.DEBUG:
