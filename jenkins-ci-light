@@ -3,10 +3,13 @@
 # acts as service script for Jenkins CI Light Server
 # USAGE: start|stop|status|logs
 #
+
+ROOT_DIR=/Users/Ben/Development/BuildLight
+
 case "$1" in
 start)
 echo "Starting Jenkins CI Light Server."
-python /usr/local/jenkins-ci-light/led.py -s --log=DEBUG &
+python $ROOT_DIR/led.py -s --log=DEBUG &
 ;;
 stop)
 echo "Stopping Jenkins CI Light server."
@@ -17,12 +20,12 @@ then
 fi
 ;;
 logs)
-echo "Showing jenkins-ci-light logs: /usr/local/var/jenkins-ci-light/server.log"
-tail -f /usr/local/var/jenkins-ci-light/server.log
+echo "Showing jenkins-ci-light logs: $ROOT_DIR/jenkins-ci-light.log"
+tail -f $ROOT_DIR/jenkins-ci-light.log
 ;;
 status)
 # Check to see if the process is running
-ps aux|grep -v grep|grep -i /usr/local/jenkins-ci-light/led.py
+ps aux|grep -v grep|grep -i $ROOT_DIR/led.py
 ;;
 
 *)
