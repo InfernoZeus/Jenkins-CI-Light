@@ -8,6 +8,8 @@ import json
 import getopt
 import logging
 import threading
+import os
+import signal
 
 SEND_UDP_IP = "192.168.1.15" #this is the IP of the wifi bridge
 SEND_UDP_PORT = 50000
@@ -164,9 +166,10 @@ logger.setLevel(LOG_LEVEL)
 
 formatter = logging.Formatter(LOG_FORMAT)
 
-fh = logging.FileHandler('led.log')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+if (MODE == "SERVER"):
+	fh = logging.FileHandler('/usr/local/var/jenkins-ci-light/server.log')
+	fh.setFormatter(formatter)
+	logger.addHandler(fh)
 
 if (MODE == "SERVER" and CONSOLE_LOGGING) or (MODE != "SERVER"):
 	ch = logging.StreamHandler()
@@ -179,6 +182,23 @@ send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 send(send_sock, COMMANDS['TURN_LIGHT_ON'])
 
 if MODE == "SERVER":
+
+	pid = str(os.getpid())
+	pidfile = "/tmp/jenkins-ci-light.pid"
+
+	if os.path.isfile(pidfile):
+		print "%s already exists, exiting" % pidfile
+		sys.exit()
+	else:
+		file(pidfile, 'w').write(pid)
+
+	def handle_exit(signal, frame):
+		os.unlink(pidfile)
+		print "Stopped jenkins-ci-light server"
+		sys.exit(0)
+
+	signal.signal(signal.SIGTERM, handle_exit)
+	signal.signal(signal.SIGINT, handle_exit)
 
 	listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	listen_sock.bind((LISTEN_UDP_IP, LISTEN_UDP_PORT))
