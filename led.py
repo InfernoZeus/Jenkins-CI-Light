@@ -109,12 +109,15 @@ def stop_fail_thread():
 	if (FAIL_THREAD != None):
 		FAIL_THREAD.stop()
 		FAIL_THREAD.join()
+		FAIL_THREAD = None
+		logger.debug("Stopped fail thread")
 
 def start_fail_thread(sock):
 	global FAIL_THREAD
 	if (FAIL_THREAD == None):
 		FAIL_THREAD = fail_mode_thread(sock)
 		FAIL_THREAD.start()
+		logger.debug("Started fail thread")
 
 def call_corresponding_mode(sock, status, job=None):
 	global FAIL_THREAD, FAILING_JOBS
