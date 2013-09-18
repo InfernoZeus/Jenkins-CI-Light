@@ -34,7 +34,7 @@ COMMAND_LOOKUP = dict((v,k) for k,v in COMMANDS.iteritems())
 
 QUIET = False
 MODE = ""
-STOP_THREAD = None
+FAIL_THREAD = None
 
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s | %(levelname)7s | %(message)s"
@@ -104,32 +104,49 @@ class fail_mode_thread (threading.Thread):
 			pygame.quit()
 		logger.debug("Exiting fail_mode_thread")
 
+def stop_fail_thread():
+	global FAIL_THREAD
+	if (FAIL_THREAD != None):
+		FAIL_THREAD.stop()
+		FAIL_THREAD.join()
+
+def start_fail_thread(sock):
+	global FAIL_THREAD
+	if (FAIL_THREAD == None):
+		FAIL_THREAD = fail_mode_thread(sock)
+		FAIL_THREAD.start()
 
 def call_corresponding_mode(sock, status, job=None):
-	global STOP_THREAD, FAILING_JOBS
-	if (STOP_THREAD != None):
-		STOP_THREAD.stop()
-		STOP_THREAD.join()
+	global FAIL_THREAD, FAILING_JOBS
+	if (job == None):
+		stop_fail_thread()
 	if (job != None):
 		if (status == "FAILURE" or status == "0"):
 			if (job != "Test Build Failure"):
 				FAILING_JOBS.add(job)
 		else:
 			FAILING_JOBS.discard(job)
+
 		if not FAILING_JOBS:
+			stop_fail_thread()
 			status = "SUCCESS"
 		else:
+			# If new job is failing, restart fail_thread
+			# otherwise leave it running as previous job is failing
+			if (status == "FAILURE"):
+				stop_fail_thread()
+			status = "FAILURE"
+
 			status_string = "Jobs "
 			for job in FAILING_JOBS:
 				status_string += "\"" + job +"\" "
 			status_string += "still failing."
 			logger.debug(status_string)
-			status = "FAILURE"
+
 	if (status == "1" or status == "SUCCESS"):
 		success_mode(sock)
 	elif (status == "0" or status == "FAILURE"):
-		STOP_THREAD = fail_mode_thread(sock)
-		STOP_THREAD.start()
+		start_fail_thread(sock)
 	else:
 		print "Status should either be 1/0 or SUCCESS/FAILURE"
 
