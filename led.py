@@ -123,10 +123,9 @@ def call_corresponding_mode(sock, status, job=None):
 	global FAIL_THREAD, FAILING_JOBS
 	if (job == None):
 		stop_fail_thread()
-	if (job != None):
+	if (job != None and job != "Test Build Failure"):
 		if (status == "FAILURE" or status == "0"):
-			if (job != "Test Build Failure"):
-				FAILING_JOBS.add(job)
+			FAILING_JOBS.add(job)
 		else:
 			FAILING_JOBS.discard(job)
 
