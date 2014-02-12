@@ -1,0 +1,3 @@
+[submodule "python-wifi-leds"]
+	path = python-wifi-leds
+	url = https://github.com/InfernoZeus/python-wifi-leds.git
