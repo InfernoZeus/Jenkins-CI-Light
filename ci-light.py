@@ -18,7 +18,7 @@ class Server:
 		parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 		parser.add_argument("-q", "--quiet", help="Disable alarm sounds", action="store_true", default=False)
 		parser.add_argument("-v", "--verbose", help="Enable extra verbose logging", action="store_true", default=False)
-		parser.add_argument("--disable-console", help="Disable console logging", action="store_true", default=False)
+		parser.add_argument("--enable-console", help="Enable console logging", action="store_true", default=False)
 		parser.add_argument("--listen-port", help="Port to listen for notifications from Jenkins", type=_port, default=50000)
 		parser.add_argument("--listen-host", help="Host to listen for notifications from Jenkins", type=_host, default="0.0.0.0")
 		parser.add_argument("--bridge-port", help="Port to send messages to the LimitlessLed Wifi Bridge", type=_port, default=50000)
@@ -49,7 +49,7 @@ class Server:
 			rootLogger = logging.getLogger()
 			rootLogger.setLevel(logging.DEBUG)
 
-		if self._args.disable_console:
+		if not self._args.enable_console:
 			rootLogger = logging.getLogger()
 			for handler in rootLogger.handlers:
 				if handler.__class__ == logging.StreamHandler:
