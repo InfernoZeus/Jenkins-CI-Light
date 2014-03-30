@@ -38,6 +38,7 @@ class Server:
 
 	def setup_logging(self, default_path="logging.json", default_level=logging.INFO, env_key="LOG_CFG"):
 		path = os.getenv(env_key, default_path)
+		path = os.path.join(os.path.dirname(__file__), path)
 		if os.path.exists(path):
 			with open(path, 'rt') as f:
 				config = json.load(f)
