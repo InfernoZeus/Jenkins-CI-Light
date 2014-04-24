@@ -1,5 +1,7 @@
+import os
 import threading
 import logging
+import pygame
 
 logger = logging.getLogger(__name__)
 
