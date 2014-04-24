@@ -30,3 +30,12 @@ class Cache:
 		return bool(self._cache)
 
 	__nonzero__=__bool__
+
+	def __str__(self):
+		ret = "["
+		if not self.is_empty():
+			for job in self._cache.keys():
+				ret += job + ", "
+			ret = ret[:-2]
+		ret += "]"
+		return ret

@@ -115,6 +115,9 @@ class Server:
 
 
 		if new_job.status == Status.Failed or (not self.demo_mode and not self._cache.is_empty()):
+
+			self.logger.info("Cached failing jobs: %s", self._cache)
+
 			# If new job failed, stop the alarm so it can be restart
 			# otherwise leave it running as previous job is failing
 			if (new_job.status == Status.Failed):
