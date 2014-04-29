@@ -23,6 +23,9 @@ class Cache:
 		except AttributeError as e:
 			raise TypeError("'job' object cannot be interpreted as a Job: " + str(e)), None, sys.exc_info()[2]
 
+	def clear(self):
+		self._cache = dict()
+
 	def is_empty(self):
 		return not self.__bool__()
 

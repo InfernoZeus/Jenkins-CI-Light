@@ -1,7 +1,9 @@
 import json
+import logging
 
 class Control():
 	commands = {}
+	logger = logging.getLogger(__name__)
 
 	@staticmethod
 	def register(command, clz):
@@ -35,3 +37,11 @@ class DemoControl(Control):
 		server.set_demo_mode(new_mode)
 Control.register("demo", DemoControl)
 
+class CacheControl(Control):
+	def __init__(self, json):
+		pass
+
+	def process(self, server):
+		server._cache.clear()
+		self.logger.info("Cleared failing job cache")
+Control.register("clear", CacheControl)
