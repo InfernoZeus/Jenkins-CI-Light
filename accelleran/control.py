@@ -25,7 +25,7 @@ class Control():
 		raise NotImplementedError("Override the constructor. Control objects shouldn't be created directly")
 
 	def process(self, server):
-		raise NotImplementedError("Please implement this method.")
+		raise NotImplementedError("Implement this method.")
 
 
 class DemoControl(Control):
@@ -33,8 +33,25 @@ class DemoControl(Control):
 		self.json = json
 
 	def process(self, server):
-		new_mode = self.json['mode']
-		server.set_demo_mode(new_mode)
+		action = self.json['action']
+		if action == "enable_demo":
+			self.logger.info("Enabling Demo Mode")
+			server.demo_mode = True
+			server.stop_alarm()
+			server.set_light_green()
+		elif action == "disable_demo":
+			self.logger.info("Disabling Demo Mode")
+			server.demo_mode = False
+			server.update_light_from_cache()
+		elif action == "start_alarm":
+			self.logger.info("Starting Demo Alarm")
+			server.start_alarm()
+			server.set_light_red()
+		elif action == "stop_alarm":
+			self.logger.info("Stopping Demo Alarm")
+			server.stop_alarm()
+			server.set_light_green()
+
 Control.register("demo", DemoControl)
 
 class CacheControl(Control):
@@ -43,5 +60,6 @@ class CacheControl(Control):
 
 	def process(self, server):
 		server._cache.clear()
+		server.update_light_from_cache()
 		self.logger.info("Cleared failing job cache")
 Control.register("clear", CacheControl)

@@ -76,13 +76,13 @@ class Server:
 						self.logger.info(new_job)
 						self.process_job(new_job)
 					except TypeError as e:
-						self.logger.info(e)
 						try:
 							# Check if JSON is control message
 							control = Control.fromJson(data)
 							control.process(self)
-						except TypeError as e:
+						except TypeError as e1:
 							self.logger.warn(e)
+							self.logger.warn(e1)
 				except IOError:
 					pass
 				except (KeyboardInterrupt, SystemExit):
@@ -105,29 +105,32 @@ class Server:
 		if new_job.status == Status.NotFinished:
 			return
 
-		if new_job.status == Status.Succeeded:
-			self._cache.remove_job(new_job)
-		else:
-			if new_job.cache:
+		if self.demo_mode:
+			if new_job.cache and new_job.status == Status.Failed:
 				self._cache.add_job(new_job)
 			else:
 				self._cache.remove_job(new_job)
-
-
-		if new_job.status == Status.Failed or (not self.demo_mode and not self._cache.is_empty()):
-
-			self.logger.info("Cached failing jobs: %s", self._cache)
-
-			# If new job failed, stop the alarm so it can be restart
-			# otherwise leave it running as previous job is failing
-			if (new_job.status == Status.Failed):
-				self.stop_alarm()
-
-			self.start_alarm()
-			self.set_light_red()
 		else:
+			if new_job.cache and new_job.status == Status.Failed:
+				self._cache.add_job(new_job)
+				self.update_light_from_cache()
+			else:
+				self._cache.remove_job(new_job)
+				if new_job.status == Status.Failed:
+					self.stop_alarm()
+					self.start_alarm()
+					self.set_light_red()
+				else:
+					self.update_light_from_cache()
+
+	def update_light_from_cache(self):
+		if self._cache.is_empty():
 			self.stop_alarm()
 			self.set_light_green()
+		else:
+			self.logger.info("Cached failing jobs: %s", self._cache)
+			self.start_alarm()
+			self.set_light_red()
 
 	def start_alarm(self):
 		if self._args.quiet:
@@ -153,11 +156,6 @@ class Server:
 		else:
 			self.set_light_green()
 			self._light.mode_up()
-
-	def set_demo_mode(self, new_mode):
-		self.logger.info("Setting demo_mode to %s", new_mode)
-		self.demo_mode = new_mode
-
 
 def _port(port):
 	"""
