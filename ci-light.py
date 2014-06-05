@@ -136,6 +136,7 @@ class Server:
 		if self._args.quiet:
 			return
 		if self._alarm is None:
+			self.logger.debug("Starting alarm noise")
 			self._alarm = Alarm()
 			self._alarm.start()
 
@@ -143,6 +144,7 @@ class Server:
 		if self._args.quiet:
 			return
 		if self._alarm is not None:
+			self.logger.debug("Stopping alarm noise")
 			self._alarm.stop()
 			self._alarm.join()
 			self._alarm = None

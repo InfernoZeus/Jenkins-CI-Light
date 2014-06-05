@@ -31,6 +31,7 @@ class Alarm (threading.Thread):
 		timer = 0
 		while (timer < self._sound.get_length()):
 			if (self.is_stopped()):
+				logger.debug("Stopping alarm early after " + str(timer) + " seconds.")
 				break
 			time.sleep(1)
 			timer += 1
