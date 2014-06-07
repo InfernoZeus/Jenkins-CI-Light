@@ -1,0 +1,6 @@
+ci-light
+========
+
+Dependencies:
+
+PyGame
