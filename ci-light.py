@@ -84,7 +84,7 @@ class Server:
 							self.logger.warn(e)
 							self.logger.warn(e1)
 				except IOError:
-					pass
+					self.logger.exception("Unexpected error:")
 				except (KeyboardInterrupt, SystemExit):
 					stop = True
 				except:
